@@ -595,12 +595,12 @@ function down(fid) {
 async function refreshList() {
     try {
         list = await apiGetAll();
-        makeNo();
         renderList(list);
     } catch (err) {
         document.getElementById('tableBox').innerHTML =
             `<div class="empty" style="color:red;">⚠️ 加载数据失败：${err.message}</div>`;
     }
+    makeNo();
 }
 
 // ---- 初始化 ----

@@ -33,7 +33,7 @@ async function ensureTables(db) {
   try {
     await db.exec(INIT_SQL);
   } catch (e) {
-    // 表已存在则忽略
+    console.error('建表失败:', e);
   }
 }
 
@@ -88,13 +88,29 @@ export async function onRequest(context) {
     // ----- POST: 新增询价单据 -----
     if (method === 'POST') {
       const body = await request.json();
-      const { xjNo, supplier, goods, num, price, totalPrice, askDate, remark, files } = body;
+      let { xjNo, supplier, goods, num, price, totalPrice, askDate, remark, files } = body;
 
       // 必填字段校验
-      if (!xjNo || !supplier || !goods || !askDate) {
+      if (!supplier || !goods || !askDate) {
         return new Response(JSON.stringify({ error: '供应商、产品名称、询价日期为必填项' }), {
           headers, status: 400
         });
+      }
+
+      // 自动生成单号（如果前端未提供）
+      if (!xjNo) {
+        const y = new Date().getFullYear();
+        const pre = 'XJ' + y;
+        const { results } = await db.prepare(
+          "SELECT xj_no FROM inquiries WHERE xj_no LIKE ? ORDER BY xj_no DESC LIMIT 1"
+        ).bind(pre + '%').all();
+        let max = 0;
+        if (results.length > 0) {
+          const last = results[0].xj_no;
+          const n = parseInt(last.replace(pre, ''));
+          if (!isNaN(n)) max = n;
+        }
+        xjNo = pre + (max + 1).toString().padStart(4, '0');
       }
 
       // 检查单号是否重复
