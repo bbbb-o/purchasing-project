@@ -555,14 +555,14 @@ function prev(fid) {
     let c = document.getElementById('previewContent');
     let mime = att.file_type || 'application/octet-stream';
     // 使用 API 端点获取文件（避免 base64 在移动端的问题）
-    let apiUrl = `${API_BASE}/download/${fid}?inline=1`;
+    let apiUrl = '/api/download/' + fid + '?inline=1';
 
     if (mime.includes('image')) {
         c.innerHTML = `<img src="${apiUrl}" style="max-width:100%;max-height:75vh;" onerror="this.parentElement.innerHTML='<p>图片加载失败</p>'">`;
     } else if (mime === 'application/pdf') {
         c.innerHTML = `<embed src="${apiUrl}" width="100%" height="500" type="application/pdf">`;
     } else {
-        c.innerHTML = `<a href="${API_BASE}/download/${fid}" download="${att.file_name}">文件无法预览，点击下载</a>`;
+        c.innerHTML = `<a href="/api/download/${fid}">文件无法预览，点击下载</a>`;
     }
     document.getElementById('previewMask').style.display = 'flex';
 }
@@ -572,12 +572,38 @@ function closePreview() {
 }
 
 function down(fid) {
-    // 直接调用下载 API，避免 base64 data URL 在 iOS 上的兼容问题
-    let url = `${API_BASE}/download/${fid}`;
-    let a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';  // iOS 上有时需要 target=_blank 才能正确触发下载
-    a.click();
+    // 移动端兼容下载：先用 fetch+blob 方式，失败则回退到直接跳转
+    var url = '/api/download/' + fid;
+    
+    fetch(url)
+        .then(function(r) {
+            if (!r.ok) throw new Error('下载失败');
+            // 尝试从 Content-Disposition 获取文件名
+            var name = 'download';
+            var cd = r.headers.get('Content-Disposition');
+            if (cd) {
+                var m = cd.match(/filename\*=UTF-8''(.+)/) || cd.match(/filename="(.+)"/) || cd.match(/filename=(.+)/);
+                if (m) { try { name = decodeURIComponent(m[1]); } catch(e) {} }
+            }
+            return r.blob().then(function(b) { return { blob: b, name: name }; });
+        })
+        .then(function(result) {
+            var objUrl = URL.createObjectURL(result.blob);
+            var a = document.createElement('a');
+            a.href = objUrl;
+            a.download = result.name;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(objUrl);
+            }, 5000);
+        })
+        .catch(function() {
+            // fetch 失败回退：直接跳转触发服务器强制下载
+            window.location.href = url;
+        });
 }
 
 // ---- 刷新列表 ----
