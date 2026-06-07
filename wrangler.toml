@@ -1,0 +1,13 @@
+name = "purchasing-project"
+compatibility_date = "2026-06-07"
+
+# Cloudflare D1 数据库绑定
+# 执行 npx wrangler d1 create purchasing-db 创建后用返回的 ID 替换下面
+[[d1_databases]]
+binding = "DB"
+database_name = "purchasing-db"
+database_id = "YOUR_DATABASE_ID"
+
+# Pages Functions 配置
+[site]
+bucket = "."
