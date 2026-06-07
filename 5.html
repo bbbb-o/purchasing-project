@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采购询价管理｜像素白云蓝底版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei",monospace;
+            image-rendering: pixelated;
+        }
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f3f4f6;
+            --border: #3377bb;
+        }
+        body {
+            background: #62a8e8;
+            color: #1f2937;
+            overflow-x: hidden;
+            position: relative;
+            min-height:100vh;
+        }
+        .cloud {
+            position:absolute;
+            background:#ffffff;
+            width:80px;height:32px;
+            box-shadow:
+                20px -8px 0 #fff,
+                -20px -8px 0 #fff,
+                10px -16px 0 #fff,
+                -10px -16px 0 #fff;
+            border-radius:4px;
+            animation: floatCloud linear infinite;
+            opacity:0.85;
+        }
+        @keyframes floatCloud {
+            from {transform:translateX(-120px);}
+            to {transform:translateX(calc(100vw + 120px));}
+        }
+        .container {max-width:1300px;margin:0 auto;padding:20px;position:relative;z-index:2;}
+        .header{
+            text-align:center;padding:20px;background:#fff;border:3px solid var(--border);
+            box-shadow:6px 6px 0 #286199;margin-bottom:24px;border-radius:2px;
+        }
+        .main{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
+        .card{
+            background:#fff;padding:24px;border:3px solid var(--border);
+            box-shadow:6px 6px 0 #286199;border-radius:2px;
+        }
+        .card-title{font-size:18px;font-weight:bold;padding-bottom:10px;border-bottom:2px dashed var(--border);margin-bottom:20px;}
+        .form-group{margin-bottom:16px;}
+        label{display:block;margin-bottom:6px;font-weight:500;}
+        .form-control{
+            width:100%;padding:9px 12px;border:2px solid var(--border);
+            border-radius:2px;font-size:14px;background:#f8fcff;
+        }
+        .form-control:focus{outline:none;border-color:#1959aa;box-shadow:2px 2px 0 #286199}
+        .btn{
+            padding:10px;border:2px solid #222;border-radius:2px;
+            cursor:pointer;font-weight:500;box-shadow:3px 3px 0 #222;
+        }
+        .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #222;}
+        .btn-primary{background:var(--primary);color:#fff;}
+        .btn-success{background:var(--success);color:#fff;}
+        .btn-warning{background:var(--warning);color:#fff;}
+        .btn-danger{background:var(--danger);color:#fff;}
+        .btn-sm{padding:4px 8px;font-size:12px;margin-left:4px;}
+        
+        /* 搜索框 + 放大镜 */
+        .search-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .search-btn {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: #2563eb;
+            color: #fff;
+            border: 2px solid #222;
+            border-radius: 2px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 #222;
+        }
+        .search-btn:active {
+            transform: translate(2px,2px);
+            box-shadow: 1px 1px 0 #222;
+        }
+
+        .table{width:100%;border-collapse:collapse;margin-top:10px;}
+        .table th,.table td{padding:10px 6px;border:2px solid #b4cde4;font-size:14px;vertical-align:top;}
+        .table th{background:#e6f2ff;}
+        .empty{text-align:center;padding:50px;color:#336;}
+
+        .file-wrap{border:2px dashed #599cd8;padding:12px;border-radius:2px;margin-top:8px;background:#f7fbff;}
+        #fileInput{display:none;}
+        .upload-btn{border:2px solid var(--primary);color:var(--primary);padding:6px 12px;border-radius:2px;display:inline-block;cursor:pointer;margin-bottom:10px;box-shadow:2px 2px 0 #286199;}
+        .file-item{
+            display:flex;justify-content:space-between;align-items:center;
+            padding:6px 8px;background:#eef6ff;border:1px solid #b8d6f0;border-radius:2px;margin:5px 0;font-size:13px;
+        }
+        .file-name{max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+        .mask{
+            position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);
+            display:none;align-items:center;justify-content:center;z-index:999;
+        }
+        .preview-box{width:90%;max-width:800px;background:#fff;padding:16px;border:3px solid #286199;box-shadow:5px 5px 0 #113;margin:8px;border-radius:2px;max-height:90vh;}
+        .preview-box img{max-width:100%;max-height:75vh;}
+        .close-preview{float:right;padding:5px 12px;background:#ddd;border:2px solid #666;border-radius:2px;cursor-pointer;margin-bottom:10px;box-shadow:2px 2px #555;}
+
+        #editMask{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:999;}
+        .edit-box{background:#fff;width:90%;max-width:500px;padding:24px;border:3px solid #286199;box-shadow:6px 6px 0 #113;border-radius:2px;max-height:85vh;overflow-y:auto;}
+        #addFileMask{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:999;}
+        .addFileBox{background:#fff;padding:20px;border:3px solid #286199;box-shadow:5px 5px #113;max-width:420px;width:90%;border-radius:2px;}
+        .highlight{background:#fff176;font-weight:bold;padding:2px 4px;border-radius:2px;}
+
+        @media(max-width:768px){
+            .main{grid-template-columns:1fr;}
+            .table{overflow-x:auto;display:block;}
+        }
+    </style>
+</head>
+<body>
+
+<script>
+(function createCloud(){
+    const count = 8;
+    for(let i=0;i<count;i++){
+        let el = document.createElement('div');
+        el.className='cloud';
+        let sizeW = 50 + Math.random()*90;
+        el.style.width = sizeW+'px';
+        el.style.height = (sizeW/2.5)+'px';
+        el.style.top = 10 + Math.random()*75 + '%';
+        el.style.animationDuration = (25+Math.random()*35)+'s';
+        el.style.animationDelay = Math.random()*20+'s';
+        document.body.appendChild(el);
+    }
+})()
+</script>
+
+<div class="container">
+    <div class="header">
+        <h1>采购询价信息管理系统｜像素风白云版</h1>
+        <p>修改单据｜单据追加附件｜检索PDF/Excel内部内容｜全本地存储</p>
+    </div>
+
+    <div class="main">
+        <div class="card">
+            <div class="card-title">新增询价单据</div>
+            <form id="inquiryForm">
+                <div class="form-group">
+                    <label>询价单号</label>
+                    <input class="form-control" id="xjNo" readonly>
+                </div>
+                <div class="form-group">
+                    <label>供应商名称<span style="color:red">*</span></label>
+                    <input class="form-control" id="supplier" required placeholder="请输入供应商">
+                </div>
+                <div class="form-group">
+                    <label>产品名称<span style="color:red">*</span></label>
+                    <input class="form-control" id="goods" required placeholder="请输入产品名称">
+                </div>
+                <div class="form-group">
+                    <label>数量(选填)</label>
+                    <input class="form-control" id="num" type="number" min="0.01" step="0.01" placeholder="无则留空">
+                </div>
+                <div class="form-group">
+                    <label>单价(元)(选填)</label>
+                    <input class="form-control" id="price" type="number" min="0.01" step="0.01" placeholder="无则留空">
+                </div>
+                <div class="form-group">
+                    <label>总价(元)(选填)</label>
+                    <input class="form-control" id="totalPrice" type="number" min="0.01" step="0.01" placeholder="手动填写总价">
+                </div>
+                <div class="form-group">
+                    <label>询价日期<span style="color:red">*</span></label>
+                    <input class="form-control" id="askDate" type="date" required>
+                </div>
+                <div class="form-group">
+                    <label>备注(选填)</label>
+                    <textarea class="form-control" id="remark" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>附件(Excel/PDF/图片)</label>
+                    <div class="file-wrap">
+                        <label class="upload-btn" for="fileInput">选择文件上传</label>
+                        <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.pdf,.jpg,.jpeg,.png">
+                        <div id="fileList"></div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="submit" style="width:100%">保存询价单</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title">询价档案列表</div>
+            <div class="form-group">
+                <div class="search-row">
+                    <input class="form-control" id="search" placeholder="搜索：供应商 / 产品 / 单号 / 附件Excel/PDF内文字">
+                    <div class="search-btn" id="searchBtn" onclick="doSearch()">🔍</div>
+                </div>
+            </div>
+            <div id="tableBox"></div>
+        </div>
+    </div>
+</div>
+
+<div class="mask" id="previewMask">
+    <div class="preview-box">
+        <button class="close-preview" onclick="closePreview()">关闭</button>
+        <div id="previewContent"></div>
+    </div>
+</div>
+
+<div id="editMask">
+    <div class="edit-box">
+        <h3 style="margin-bottom:16px;">修改询价单信息</h3>
+        <form id="editForm">
+            <input type="hidden" id="editIndex">
+            <div class="form-group"><label>供应商</label><input class="form-control" id="editSupplier"></div>
+            <div class="form-group"><label>产品名称</label><input class="form-control" id="editGoods"></div>
+            <div class="form-group"><label>数量(选填)</label><input class="form-control" id="editNum"></div>
+            <div class="form-group"><label>单价(选填)</label><input class="form-control" id="editPrice"></div>
+            <div class="form-group"><label>总价(选填)</label><input class="form-control" id="editTotal"></div>
+            <div class="form-group"><label>日期</label><input class="form-control" id="editDate" type="date"></div>
+            <div class="form-group"><label>备注</label><textarea class="form-control" id="editRemark" rows="2"></textarea></div>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button type="submit" class="btn btn-success">保存修改</button>
+                <button type="button" class="btn" onclick="closeEdit()">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="addFileMask">
+    <div class="addFileBox">
+        <h3>追加附件到当前单据</h3>
+        <input type="hidden" id="addFileIndex">
+        <div class="form-group" style="margin-top:12px;">
+            <label>选择新附件：</label>
+            <input type="file" id="appendFileInput" multiple accept=".xlsx,.xls,.pdf,.jpg,.png">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+            <button class="btn btn-success" onclick="saveAppendFile()">确认上传</button>
+            <button class="btn btn-danger" onclick="closeAddFile()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
+
+<script>
+let tmpFiles = [];
+let list = JSON.parse(localStorage.getItem('inquiryList')) || [];
+const DB_NAME = "InquiryFiles";
+const STORE = "files";
+let db;
+
+function initDB() {
+    return new Promise(res => {
+        let req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = e => {
+            db = e.target.result;
+            db.createObjectStore(STORE, { keyPath: 'fid' });
+        };
+        req.onsuccess = e => { db = e.target.result; res(); };
+    });
+}
+
+function makeNo() {
+    let y = new Date().getFullYear();
+    let pre = 'XJ' + y;
+    let max = 0;
+    list.forEach(item => {
+        if (item.xjNo.startsWith(pre)) {
+            let n = parseInt(item.xjNo.replace(pre, ''));
+            if (n > max) max = n;
+        }
+    });
+    document.getElementById('xjNo').value = pre + (max + 1).toString().padStart(4, '0');
+}
+
+async function addFile(file) {
+    let fid = Date.now() + '' + Math.random().toString(36).slice(2);
+    let rec = { fid, name: file.name, type: file.type, blob: file };
+    await new Promise(res => {
+        let t = db.transaction(STORE, 'readwrite');
+        t.objectStore(STORE).put(rec);
+        t.oncomplete = res;
+    });
+    return fid;
+}
+function getFile(fid) {
+    return new Promise(res => {
+        let t = db.transaction(STORE);
+        let r = t.objectStore(STORE).get(fid);
+        r.onsuccess = () => res(r.result);
+    });
+}
+function delFile(fid) {
+    return new Promise(res => {
+        let t = db.transaction(STORE, 'readwrite');
+        t.objectStore(STORE).delete(fid);
+        t.oncomplete = res;
+    });
+}
+
+function renderTmpFiles() {
+    let h = '';
+    tmpFiles.forEach((f, i) => {
+        h += `<div class="file-item"><span>${f.name}</span><button class='btn btn-sm btn-danger' onclick='tmpFiles.splice(${i},1);renderTmpFiles()'>删除</button></div>`;
+    });
+    document.getElementById('fileList').innerHTML = h;
+}
+
+async function readExcel(blob) {
+    let buf = await blob.arrayBuffer();
+    let wb = XLSX.read(buf);
+    let txt = '';
+    wb.SheetNames.forEach(n => txt += XLSX.utils.sheet_to_txt(wb.Sheets[n]) + ' ');
+    return txt.toLowerCase();
+}
+async function readPDF(blob) {
+    let buf = await blob.arrayBuffer();
+    let pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    let txt = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        let page = await pdf.getPage(i);
+        let content = await page.getTextContent();
+        content.items.forEach(item => txt += item.str + ' ');
+    }
+    return txt.toLowerCase();
+}
+
+async function doSearch() {
+    let key = document.getElementById('search').value.toLowerCase().trim();
+    if (!key) { renderList(list); return; }
+    let result = [];
+    for (let item of list) {
+        let match = item.xjNo.toLowerCase().includes(key) || item.supplier.toLowerCase().includes(key) || item.goods.toLowerCase().includes(key);
+        if (!match && item.fileIds) {
+            for (let fid of item.fileIds) {
+                let f = await getFile(fid);
+                if (!f) continue;
+                let t = '';
+                if (f.type.includes('excel') || f.type.includes('sheet')) t = await readExcel(f.blob);
+                else if (f.type === 'application/pdf') t = await readPDF(f.blob);
+                if (t.includes(key)) { match = true; break; }
+            }
+        }
+        if (match) result.push(item);
+    }
+    renderList(result, key);
+}
+
+async function renderList(data, highlight = '') {
+    let box = document.getElementById('tableBox');
+    if (data.length === 0) { box.innerHTML = '<div class="empty">暂无询价数据</div>'; return; }
+    let h = `<table class="table"><thead><tr>
+<th>单号</th><th>供应商</th><th>产品</th><th>数量</th><th>单价</th><th>总价</th><th>附件档案</th><th>操作</th>
+</tr></thead><tbody>`;
+
+    for (let i = 0; i < list.length; i++) {
+        let item = list[i];
+        if (!data.find(x => x.xjNo === item.xjNo)) continue;
+        let filesHtml = '无附件';
+        if (item.fileIds && item.fileIds.length > 0) {
+            filesHtml = '';
+            for (let fid of item.fileIds) {
+                let f = await getFile(fid);
+                if (!f) continue;
+                filesHtml += `<div class="file-item" style="margin:2px 0">
+                    <span>${f.name}</span>
+                    <div>
+                        <button class="btn btn-sm" onclick="prev('${fid}')">预览</button>
+                        <button class="btn btn-sm" onclick="down('${fid}')">下载</button>
+                    </div>
+                </div>`;
+            }
+        }
+        function high(s) {
+            if (!highlight || !s) return s??'-';
+            return String(s).replace(new RegExp(highlight, 'gi'), m => `<span class='highlight'>${m}</span>`);
+        }
+        h += `<tr>
+            <td>${high(item.xjNo)}</td>
+            <td>${high(item.supplier)}</td>
+            <td>${high(item.goods)}</td>
+            <td>${item.num??'-'}</td>
+            <td>${item.price??'-'}</td>
+            <td>${item.totalPrice??'-'}</td>
+            <td>${filesHtml}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" onclick="openEdit(${i})">修改</button>
+                <button class="btn btn-sm btn-primary" onclick="openAddFile(${i})">追加附件</button>
+                <button class="btn btn-sm btn-danger" onclick="delItem(${i})">删除</button>
+            </td>
+        </tr>`;
+    }
+    h += '</tbody></table>';
+    box.innerHTML = h;
+}
+
+function openEdit(index) {
+    let item = list[index];
+    document.getElementById('editIndex').value = index;
+    document.getElementById('editSupplier').value = item.supplier;
+    document.getElementById('editGoods').value = item.goods;
+    document.getElementById('editNum').value = item.num || '';
+    document.getElementById('editPrice').value = item.price || '';
+    document.getElementById('editTotal').value = item.totalPrice || '';
+    document.getElementById('editDate').value = item.askDate;
+    document.getElementById('editRemark').value = item.remark || '';
+    document.getElementById('editMask').style.display = 'flex';
+}
+function closeEdit() {document.getElementById('editMask').style.display = 'none';}
+document.getElementById('editForm').onsubmit = e => {
+    e.preventDefault();
+    let idx = document.getElementById('editIndex').value;
+    list[idx].supplier = document.getElementById('editSupplier').value;
+    list[idx].goods = document.getElementById('editGoods').value;
+    list[idx].num = document.getElementById('editNum').value || '';
+    list[idx].price = document.getElementById('editPrice').value || '';
+    list[idx].totalPrice = document.getElementById('editTotal').value || '';
+    list[idx].askDate = document.getElementById('editDate').value;
+    list[idx].remark = document.getElementById('editRemark').value;
+    localStorage.setItem('inquiryList', JSON.stringify(list));
+    closeEdit();renderList(list);
+};
+
+let appendFileArr = [];
+function openAddFile(index){
+    document.getElementById('addFileIndex').value = index;
+    appendFileArr=[];
+    document.getElementById('appendFileInput').value='';
+    document.getElementById('addFileMask').style.display='flex';
+}
+function closeAddFile(){document.getElementById('addFileMask').style.display='none';appendFileArr=[];}
+document.getElementById('appendFileInput').onchange = e=>{
+    appendFileArr = Array.from(e.target.files);
+}
+async function saveAppendFile(){
+    let idx = document.getElementById('addFileIndex').value;
+    if(appendFileArr.length===0){alert('请选择要追加的文件');return;}
+    if(!list[idx].fileIds) list[idx].fileIds=[];
+    for(let f of appendFileArr){
+        let fid = await addFile(f);
+        list[idx].fileIds.push(fid);
+    }
+    localStorage.setItem('inquiryList',JSON.stringify(list));
+    closeAddFile();
+    renderList(list);
+    alert('附件追加成功！');
+}
+
+async function delItem(index) {
+    if (!confirm('确定删除本条询价及全部附件？')) return;
+    let item = list[index];
+    if (item.fileIds) for (let fid of item.fileIds) await delFile(fid);
+    list.splice(index, 1);
+    localStorage.setItem('inquiryList', JSON.stringify(list));
+    renderList(list);
+}
+
+async function prev(fid) {
+    let f = await getFile(fid);
+    let url = URL.createObjectURL(f.blob);
+    let c = document.getElementById('previewContent');
+    if (f.type.includes('image')) c.innerHTML = `<img src="${url}">`;
+    else if (f.type === 'application/pdf') c.innerHTML = `<embed src="${url}" width="100%" height="500">`;
+    else c.innerHTML = `<a href="${url}" download="${f.name}">文件无法预览，点击下载</a>`;
+    document.getElementById('previewMask').style.display = 'flex';
+}
+function closePreview() {document.getElementById('previewMask').style.display = 'none';}
+async function down(fid) {
+    let f = await getFile(fid);
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(f.blob);a.download = f.name;a.click();
+}
+
+(async () => {
+    await initDB();
+    makeNo();
+    document.getElementById('askDate').valueAsDate = new Date();
+    renderList(list);
+
+    document.getElementById('fileInput').onchange = e => {
+        tmpFiles = Array.from(e.target.files);
+        renderTmpFiles();
+    };
+
+    document.getElementById('inquiryForm').onsubmit = async e => {
+        e.preventDefault();
+        let fids = [];
+        for (let f of tmpFiles) fids.push(await addFile(f));
+        list.unshift({
+            xjNo: document.getElementById('xjNo').value,
+            supplier: document.getElementById('supplier').value.trim(),
+            goods: document.getElementById('goods').value.trim(),
+            num: document.getElementById('num').value || '',
+            price: document.getElementById('price').value || '',
+            totalPrice: document.getElementById('totalPrice').value || '',
+            askDate: document.getElementById('askDate').value,
+            remark: document.getElementById('remark').value.trim() || '',
+            fileIds: fids.length>0 ? fids : []
+        });
+        localStorage.setItem('inquiryList', JSON.stringify(list));
+        document.getElementById('inquiryForm').reset();
+        tmpFiles = [];renderTmpFiles();makeNo();renderList(list);
+        alert('询价单保存成功！');
+    };
+
+    document.getElementById('search').oninput = doSearch;
+})();
+</script>
+</body>
+</html>
