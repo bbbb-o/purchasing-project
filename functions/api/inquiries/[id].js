@@ -1,6 +1,37 @@
 // Cloudflare Pages Function: /api/inquiries/:id
 // 处理单个询价单据的查询、修改、删除
 
+const INIT_SQL = `
+CREATE TABLE IF NOT EXISTS inquiries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  xj_no TEXT NOT NULL UNIQUE,
+  supplier TEXT NOT NULL,
+  goods TEXT NOT NULL,
+  num REAL,
+  price REAL,
+  total_price REAL,
+  ask_date TEXT NOT NULL,
+  remark TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fid TEXT NOT NULL UNIQUE,
+  inquiry_id INTEGER NOT NULL,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  file_data TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (inquiry_id) REFERENCES inquiries(id) ON DELETE CASCADE
+);
+`;
+
+async function ensureTables(db) {
+  try { await db.exec(INIT_SQL); } catch (e) {}
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const db = env.DB;
@@ -19,6 +50,7 @@ export async function onRequest(context) {
   }
 
   try {
+    await ensureTables(db);
     // ----- GET: 获取单个单据（含附件） -----
     if (method === 'GET') {
       const record = await db.prepare('SELECT * FROM inquiries WHERE id = ?').bind(id).first();

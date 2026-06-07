@@ -1,6 +1,42 @@
 // Cloudflare Pages Function: /api/inquiries
 // 处理询价单据的列表查询和新增
 
+// 自动建表 SQL
+const INIT_SQL = `
+CREATE TABLE IF NOT EXISTS inquiries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  xj_no TEXT NOT NULL UNIQUE,
+  supplier TEXT NOT NULL,
+  goods TEXT NOT NULL,
+  num REAL,
+  price REAL,
+  total_price REAL,
+  ask_date TEXT NOT NULL,
+  remark TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fid TEXT NOT NULL UNIQUE,
+  inquiry_id INTEGER NOT NULL,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  file_data TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (inquiry_id) REFERENCES inquiries(id) ON DELETE CASCADE
+);
+`;
+
+async function ensureTables(db) {
+  try {
+    await db.exec(INIT_SQL);
+  } catch (e) {
+    // 表已存在则忽略
+  }
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const db = env.DB;
@@ -20,6 +56,8 @@ export async function onRequest(context) {
   }
 
   try {
+    // 自动建表（首次访问时）
+    await ensureTables(db);
     // ----- GET: 获取所有询价单据 -----
     if (method === 'GET') {
       const search = url.searchParams.get('search') || '';
